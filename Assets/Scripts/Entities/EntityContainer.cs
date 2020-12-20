@@ -26,7 +26,6 @@ public class EntityContainer : MonoBehaviour
     const string _search = "search";
     const string _lookAround = "look around";
     const string _idle = "idle";
-    const string _goToLastPoint = "go to last point";
     const string _follow = "follow";
     const string _escape = "escape";
     const string _attack = "attack";
@@ -48,6 +47,9 @@ public class EntityContainer : MonoBehaviour
     // Referencia a mi GO target
     GameObject _target;
 
+    // Referencia al GO que me golpeo ultimo
+    GameObject _lastHittedBy;
+
     // Question Nodes
     QuestionNode _lowHp;
     QuestionNode _seeingTarget;
@@ -61,12 +63,17 @@ public class EntityContainer : MonoBehaviour
     //referencia al Game Manager
     GameManager _manager;
 
+    //El estado de follow y escape
+    FollowState<string> followState = null;
+    EscapeState<string> escapeState = null;
+
     #region ~~~ ENCAPSULADO ~~~
     public List<GameObject> Allies { set { _allies = value; } }
     public Transform FlockingAim { get { return _flockingAim; } }
     public GameObject Target { get { return _target; } }
     public Sight Sight { get { return _sight; } }
     public GameManager Manager { set { _manager = value; } }
+    public GameObject LastHittedBy { set { _lastHittedBy = value; } get { return _lastHittedBy; } }
     #endregion
 
     private void Start()
@@ -94,8 +101,10 @@ public class EntityContainer : MonoBehaviour
         IdleState<string> idleState = new IdleState<string>(this);
         SearchState<string> searchState = new SearchState<string>(this, _mapNodes, _mapObstacles, _avoidableObstacles);
         LookAroundState<string> lookAroundState = new LookAroundState<string>(this);
-        EscapeState<string> escapeState = new EscapeState<string>(this, _mapObstacles, _avoidableObstacles, _mapNodes);
-        FollowState<string> followState = null;
+        escapeState = new EscapeState<string>(this, _mapObstacles, _avoidableObstacles, _mapNodes);
+        AproachState<string> aproachState = new AproachState<string>(this, _sight, _avoidableObstacles);
+        AttackState<string> attackState = new AttackState<string>(this, _attackComponent);
+
         if (!_isLeader)
         {
             EntityContainer myLeader;
@@ -110,8 +119,6 @@ public class EntityContainer : MonoBehaviour
             }
             followState = new FollowState<string>(this, _allies, _mapObstacles, myLeader.FlockingAim);
         }
-        AproachState<string> aproachState = new AproachState<string>(this, _sight, _avoidableObstacles);
-        AttackState<string> attackState = new AttackState<string>(this, _attackComponent);
         //GoToLastPointState<string> goToLastPointState = new GoToLastPointState<string>();
 
         // Creo las transiciones
@@ -184,6 +191,7 @@ public class EntityContainer : MonoBehaviour
     // Ejecutar el Desicion Tree
     public void ExecuteDesicionTree()
     {
+        if (_fsm.GetState() == escapeState) return;
         _lowHp.Execute();
     }
     #endregion
@@ -239,12 +247,14 @@ public class EntityContainer : MonoBehaviour
         if (_myTeam == Team.Blue) leader = _blueLeader;
         else leader = _redLeader;
 
+        if (leader == null) return false;
+
         Vector3 diff = leader.transform.position - transform.position;
         float distance = diff.magnitude;
-        if (distance < 5f)
+        if (distance < 10f)
         {
             bool areObstacles = Physics.Raycast(transform.position, diff.normalized, distance, _mapObstacles);
-            if (areObstacles) return false;
+            if (areObstacles || _fsm.GetState() == followState) return false;
             else return true;
         }
         else
@@ -325,20 +335,46 @@ public class EntityContainer : MonoBehaviour
     public void RotateTo(Quaternion rotation) { _entityMovement.RotateTo(rotation); }
     public void LookAtPoint(Vector3 lookAt) { _entityMovement.LookAtPoint(lookAt); }
     public void RotateEntity(Vector3 eulers) { _entityMovement.Rotate(eulers); }
-    public void GetDamaged(float damage) { _health.ChangeLife(damage); }
+    public void GetDamaged(float damage) 
+    { 
+
+        _health.ChangeLife(damage); 
+    }
     
     public void Die()
     {
-
         if (_myTeam == Team.Blue)
         {
             _manager.BlueTeamSoldiers.Remove(gameObject);
+
+            if (_isLeader)
+            {
+                int soldiersAlive = _manager.BlueTeamSoldiers.Count - 1;
+
+                for (int i = 0; i <= soldiersAlive; i++)
+                {
+                    if (_manager.BlueTeamSoldiers.Count < 1) continue;
+                    var soldier = _manager.BlueTeamSoldiers[0];
+                    soldier.GetComponent<EntityContainer>().Die();
+                }
+                _manager.EndGame(false);
+            }
+            Destroy(gameObject);
         }
         else
         {
             _manager.RedTeamSoldiers.Remove(gameObject);
+
+            if (_isLeader)
+            {
+                foreach (var soldier in _manager.RedTeamSoldiers)
+                {
+                    soldier.GetComponent<EntityContainer>().Die();
+                }
+                _manager.EndGame(true);
+            }
+            Destroy(gameObject);
         }
-        Destroy(gameObject);
     }
     #endregion
 }

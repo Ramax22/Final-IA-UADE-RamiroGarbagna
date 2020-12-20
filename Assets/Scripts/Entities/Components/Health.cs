@@ -24,6 +24,11 @@ public class Health : MonoBehaviour
         _actualHp -= modifier;
         _actualHp = Mathf.Clamp(_actualHp, 0, _maxHp);
 
+        if (_actualHp < 20)
+        {
+            _owner.ExecuteDesicionTree();
+        }
+
         if (_actualHp == 0)
         {
             _owner.Die();

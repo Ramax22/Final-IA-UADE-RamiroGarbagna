@@ -26,14 +26,61 @@ public class Flock : ISteeringBehaviour
 
     public Vector3 GetDir()
     {
+        // NEW VERSION
+
+        /*Vector3 vAlignment = new Vector3();
+        Vector3 vCohesion = new Vector3();
+        Vector3 vSeparation = new Vector3();
+        int neighborCount = 0;
+
+        foreach (var partner in _aliveSoldiers)
+        {
+            if (partner != _entityGO)
+            {
+                if (Vector3.Distance(_entityGO.transform.position, partner.transform.position) < partnerDistance)
+                {
+                    // alignment
+
+                    // separation
+                    vSeparation.x += partner.transform.position.x - _entityGO.transform.position.x;
+                    vSeparation.z += partner.transform.position.z - _entityGO.transform.position.z;
+
+                    neighborCount++;
+                }
+            }
+        }
+
+        if (neighborCount != 0)
+        {
+            // alignment
+
+            // separation
+            vSeparation.x /= neighborCount;
+            vSeparation.z /= neighborCount;
+
+            vSeparation.x *= -1;
+            vSeparation.z *= -1;
+        }
+
+        Vector3 dir = new Vector3();
+        dir.x += _objective.position.normalized.x + _objective.forward.normalized.x + vSeparation.normalized.x;
+        dir.z += _objective.position.normalized.z + _objective.forward.normalized.z + vSeparation.normalized.z;
+        return dir;*/
+
+
+
+
+
+        // OLD VERSION
+        
         //Si no tengo objetivo, devuelvo Vector3.up que es una señal de que hay un error o de que salio mal
         if (_objective == null) return Vector3.up;
 
         int companions = 0; // el contador de compañeros en el grupo
 
         //Vectores de centro y de avoid
-        Vector3 center = new Vector3();
-        Vector3 avoid = new Vector3();
+        Vector3 center = Vector3.zero;
+        Vector3 avoid = Vector3.zero;
 
         foreach (var partner in _aliveSoldiers)
         {
@@ -55,7 +102,7 @@ public class Flock : ISteeringBehaviour
                 companions++;
 
                 // avoidance
-                if (distance < 1.5f)
+                if (distance < 2f)
                 {
                     avoid = avoid + (_entityGO.transform.position - partner.transform.position); // al vector de avoid le sumo un vector para que vaya hacia el lugar contrario
                 }
@@ -77,5 +124,6 @@ public class Flock : ISteeringBehaviour
         {
             return Vector3.up;
         }
+        
     }
 }

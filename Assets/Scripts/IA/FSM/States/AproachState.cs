@@ -9,6 +9,7 @@ public class AproachState<T> : FSMState<T>
     GameObject _target;
     float _minDistance;
     Sight _sight;
+    Pursit pursit;
     Avoid _avoid;
 
     public AproachState(EntityContainer entity, Sight sight, LayerMask avoidableObstacles)
@@ -24,6 +25,7 @@ public class AproachState<T> : FSMState<T>
     {
         _target = _entity.Target;
         _avoid.SetTarget(_target.transform);
+        pursit = new Pursit(_entity.transform, _target.transform, _target.GetComponent<Rigidbody>(), 0.5f);
     }
 
     //Sobreescribo la funcion de Execute de la clase FSMState
@@ -57,7 +59,17 @@ public class AproachState<T> : FSMState<T>
             }
 
             //En caso de no estar en la distancia correcta, me muevo hacia el enemigo
-            var dir = _avoid.GetDir();
+            Vector3 dir;
+
+            if (distance < 4)
+            {
+                dir = _avoid.GetDir();
+            }
+            else
+            {
+                dir = pursit.GetDir();
+            }
+ 
             _entity.MoveEntity(dir);
             _entity.LookAtPoint(_target.transform.position);
         }

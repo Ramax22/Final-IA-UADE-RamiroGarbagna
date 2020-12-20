@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
+    [SerializeField] TMPro.TextMeshProUGUI winText;
+
     [Header("Quantity of Soldiers")]
     [SerializeField] int _blueTeamSoldiersQuantity;
     [SerializeField] int _redTeamSoldiersQuantity;
@@ -82,6 +84,22 @@ public class GameManager : MonoBehaviour
         }
 
         // ahora les digo a todas las unidades cuales son sus enemigo
+    }
+
+    public void EndGame(bool blueTeamWins)
+    {
+        Time.timeScale = 0;
+        string color = "";
+        if (blueTeamWins)
+        {
+            color = "blue";
+        }
+        else
+        {
+            color = "red";
+        }
+
+        winText.text = "<color=\"" + color + "\">" + color.ToUpper() + " TEAM WINS </color>";
     }
     #endregion
 

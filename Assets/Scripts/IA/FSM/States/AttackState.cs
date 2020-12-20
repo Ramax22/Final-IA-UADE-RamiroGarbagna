@@ -27,7 +27,6 @@ public class AttackState<T> : FSMState<T>
     //Sobreescribo la funcion de Execute de la clase FSMState
     public override void Execute()
     {
-        Debug.Log("Aqui toy", _entity.transform.gameObject);
         // si el target no exite mas, o es nulo, ejecutamos el arbol
         if (_target == null)
         {

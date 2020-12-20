@@ -11,6 +11,7 @@ public class FollowState<T> : FSMState<T>
     Vector3 dir;
     float _timerSight;
     Sight _sight;
+    float _followTimer;
 
     public FollowState(EntityContainer entity, List<GameObject> alliedSoldiers, LayerMask unavoidableObstacles, Transform objectiveTarget)
     {
@@ -28,13 +29,14 @@ public class FollowState<T> : FSMState<T>
         //Actualizo la posicion de mi objetivo
         _flocking.SetObjective(_objetive);
         _timerSight = 0.3f;
+        _followTimer = 25f;
     }
 
     //Sobreescribo la funcion de Execute de la clase FSMState
     public override void Execute()
     {
         _timerSight -= Time.deltaTime;
-        if(_timerSight <= 0)
+        if (_timerSight <= 0)
         {
             _sight.IsInSight();
             _timerSight = 0.3f;
@@ -45,7 +47,9 @@ public class FollowState<T> : FSMState<T>
 
         // Agarro el vector de movimiento
         dir = _flocking.GetDir();
-            
+
+        //_entity.MoveEntity(dir);
+
         // hago el alignment y el movimiento solo si no devolvio Vector3.Up
         if (dir != Vector3.up)
         {
@@ -67,11 +71,18 @@ public class FollowState<T> : FSMState<T>
         {
             _entity.ExecuteDesicionTree();
         }
+
+        // establesco un tiempo maximo para que los soldados sigan al líder
+        _followTimer -= Time.deltaTime;
+        if (_followTimer <= 0)
+        {
+            _entity.ExecuteDesicionTree();
+        }
     }
 
     //Sobreescribo la funcion de Sleep de la clase FSMState
     public override void Sleep()
     {
-
+        _entity.MoveEntity(Vector3.zero);
     }
 }

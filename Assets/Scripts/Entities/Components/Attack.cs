@@ -8,6 +8,7 @@ public class Attack : MonoBehaviour
 
     public void DeliverDamage(EntityContainer entity)
     {
+        entity.LastHittedBy = gameObject;
         entity.GetDamaged(_force);
     }
 }

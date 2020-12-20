@@ -9,7 +9,9 @@ public class EscapeState<T> : FSMState<T>
     List<Node> _nodeList;
     LayerMask _obstacleMask;
     Avoid _avoid;
+    Evade _escape;
     List<Node> _destinyWay;
+    GameObject _hittedBy;
 
     Node _origin;
     Node _destiny;
@@ -34,9 +36,11 @@ public class EscapeState<T> : FSMState<T>
     //Sobreescribo la función Awake de la clase FSMState
     public override void Awake()
     {
+        _hittedBy = _entity.LastHittedBy;
         _origin = FindNearestNode();
         _destinyWay = _aStar.Run(_origin, Satisfies, GetNeighbours, GetCost, Heuristic);
         _pointer = 0;
+        _escape = new Evade(_entity.transform, _hittedBy.transform, _hittedBy.GetComponent<Rigidbody>(), 1f);
     }
 
     //Sobreescribo la funcion de Execute de la clase FSMState
@@ -57,8 +61,28 @@ public class EscapeState<T> : FSMState<T>
         }
         else
         {
-            _entity.MoveEntity(new Vector3(0f, 0f, 0f));
-            _entity.ExecuteDesicionTree();
+            if (_hittedBy == null)
+            {
+                _hittedBy = _entity.LastHittedBy;
+                if (_hittedBy != null)
+                {
+                    _escape = new Evade(_entity.transform, _hittedBy.transform, _hittedBy.GetComponent<Rigidbody>(), 1f);
+                }
+                else
+                {
+                    _entity.MoveEntity(Vector3.zero);
+                }
+            }
+            else
+            {
+                var dir = _escape.GetDir();
+                _entity.MoveEntity(dir);
+            }
+
+
+
+            //_entity.MoveEntity(new Vector3(0f, 0f, 0f));
+            //_entity.ExecuteDesicionTree();
         }
     }
 
